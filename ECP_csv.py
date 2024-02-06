@@ -1,13 +1,13 @@
 # coding: UTF-8
 import pandas as pd
 import time
+import sys
+import os
 import math
+import numpy as np
 from pymeasure.instruments.keithley import Keithley2400
 from datetime import datetime
 import concurrent.futures
-import requests
-import numpy as np
-import os
 
 ### thermistor settings ###
 pulse_interval = 0.4
@@ -18,7 +18,6 @@ B_constant = 4390
 R25 = 100000
 T25 = 298.15
 
-### Excel settings ###
 keithley1 = Keithley2400("GPIB::22") # thermistor
 keithley2 = Keithley2400("GPIB::24") # current_apply
 
@@ -87,8 +86,6 @@ def connection_test():
     keithley1.shutdown()
     keithley2.shutdown()    
 
-    book = openpyxl.Workbook() # create an excel file
-    sheet = book.worksheets[0] 
     print('connection OK')
     
 # apply current to a thermistor and get a voltage value
@@ -181,73 +178,60 @@ def calculation():
         # 酸化→還元の順で起こるので、Average emperatureの列から、酸化開始a秒後-還元開始a秒後(a<=half_period_time)をそれぞれ計算。
 
     print('cauculation_done.')
-  
-""" # You can create charts on the excel file, if you want.
-def chart_creation():
-    chart_1 = ScatterChart() # Somehow creating a large chart and filling makes an error, thus charts were devided　なぜか1つのchartに代入しなおす方法にするとエラーを吐くため、3つのchartを分けている.
-    chart_2 = ScatterChart() 
-    chart_3 = ScatterChart()
-    chart_4 = ScatterChart()
- 
-    start_row = 2 # row (all graph have the same row)  
-    # raw data
-    end_row_1 = (5* half_period_points*2) +(start_row-1) # column 列。5周期だけプロットする
-    x_1 = Reference(sheet, min_col = 1, min_row = start_row , max_row = end_row_1) # sheetの1列目start_row行目からend_row_1行目までのデータを取得。
-    y_1 = Reference(sheet, min_col = 2, min_row = start_row , max_row = end_row_1) # sheetの2行目start_row行目からend_row_1行目までのデータを取得。
-    series_1 = Series(y_1, x_1, title = "Temperature vs. time")
-    chart_1.legend = None
-    chart_1.series.append(series_1) # seriesオブジェクトをもとにグラフ作成
-    chart_1.x_axis.title = "time"
-    chart_1.y_axis.title = "Temperature"
-    sheet.add_chart(chart_1,"A7")#　plot 
-    
-    # Average temperature
-    end_row_2 = half_period_points*2 +(start_row-1)
-    x_2 = Reference(sheet, min_col = 7, min_row = start_row , max_row = end_row_2) 
-    y_2 = Reference(sheet, min_col = 8, min_row = start_row , max_row = end_row_2) 
-    series_2 = Series(y_2, x_2, title = "Average temperature vs. time") 
-    chart_2.legend = None
-    chart_2.x_axis.title = "time"
-    chart_2.y_axis.title = "Average temperature"
-    chart_2.series.append(series_2)
-    sheet.add_chart(chart_2, "I7")
-
-    # Tox-Tred 
-    end_row_3 = half_period_points+(start_row-1)
-    x_3 = Reference(sheet, min_col = 9, min_row = start_row , max_row = end_row_3) 
-    y_3 = Reference(sheet, min_col = 10, min_row = start_row , max_row = end_row_3) 
-    series_3 = Series(y_3, x_3, title = "Tox(t)-Tred(t) vs. t")
-    chart_3.legend = None
-    chart_3.series.append(series_3)
-    chart_3.x_axis.title = "t"
-    chart_3.y_axis.title = "Tox(t)-Tred(t)"
-    sheet.add_chart(chart_3, "Q7")
-    
-    # voltage
-    end_row_4 = 5* half_period_points*2 +(start_row-1) 
-    x_4 = Reference(sheet, min_col = 12, min_row = start_row , max_row = end_row_4) 
-    y_4 = Reference(sheet, min_col = 13, min_row = start_row , max_row = end_row_4) 
-    series_4 = Series(y_4, x_4, title = "Voltage vs. time")
-    chart_4.legend = None
-    chart_4.series.append(series_4)
-    chart_4.x_axis.title = "time"
-    chart_4.y_axis.title = "Voltage"
-    sheet.add_chart(chart_4,"Y7")
-
-    print('chart_creation done.')
-"""
-
-""" # can send you a slack message after the completion of the measurement, if you want
-def slack_notify(msg = 'measurement finished'):
-    slack_user_id = 'Type your slack id here'
-    slack_webhook_url = 'Type your slack URL here'
-    requests.post(slack_webhook_url, json={"text":f"<@{slack_user_id}> {msg}"}) 
-    requests.post(slack_webhook_url, json={"text":f" {msg}"})
-"""
 
 
 ### conducting functions ###
+while True:
+    meas_No = input("How many times do you plan to measure?:") #measurement number
+    try:
+        if meas_No == "q":
+            print("Cancelled")
+            break
+        meas_No = int(meas_No)
+        sample_names = []
+        currents = []
+        cycles = []
+        flip_times = []
+        i = 0
+        while i < meas_No:
+            print("Cycle No" + str(i + 1) + ".\n") 
+            sample_name = input("Put your sample name:")
+            current = input("Current [mA]:")
+            cycle = input("How many cycles?:")
+            flip_time = input("How long [s] will the cycle?:")
+            if sample_name == "q" or current == "q" or cycle == "q" or flip_time == "q":
+                print("cancelled.")
+                break
+            sample_names.append(sample_name)
+            currents.append(float(current))
+            cycles.append(int(cycle))
+            flip_times.append(float(flip_time) / 2)
+            while True:
+                confirm = input("Are you sure? [y/n]:")
+                if confirm == "y":
+                    print("OK.")
+                    i += 1
+                    break
+                elif confirm == "n":
+                    sample_names.pop()
+                    currents.pop()
+                    cycles.pop()
+                    flip_times.pop()
+                    print("Retry")
+                    break
+                else:
+                    print("?")
+    
+            
+    except:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(exc_type, exc_value, "[in line",exc_tb.tb_lineno,"]")
 
+    ender = input("q to end.:")
+    if ender == "q":
+        print("Bye.")
+        break
+        
 if __name__ == "__main__":
     sample_name = 'ferri_ferrocyanide_0.4M'
     I = np.array([0.1,0.2,0.3,0.4]) # 各測定の電流値をmA単位で入力。numpyのリストにしておくと1000で割って容易にA単位に直せる。
