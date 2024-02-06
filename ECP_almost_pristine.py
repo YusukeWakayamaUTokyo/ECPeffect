@@ -7,7 +7,7 @@ import math
 from pymeasure.instruments.keithley import Keithley2400
 from datetime import datetime
 import concurrent.futures
-import requests
+import requests # for slack
 import numpy as np
 import os
 
