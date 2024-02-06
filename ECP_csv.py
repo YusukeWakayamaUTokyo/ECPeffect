@@ -225,15 +225,18 @@ while True:
                 
         wait_time = float(input("How much time [h] should passe before measurements?:")) * 3600
         int_time = float(input("Time between measurements [h]:")) * 3600 # interval time
+        
         current_cycle = 0
         while current_cycle < len(sample_names):
-            print("/nNow cycle" + str(current_cycle + 1) + "is being conducted.\n")
+            print("\nNow cycle" + str(current_cycle + 1) + "is being conducted.\n")
             data = pd.DataFrame(columns=["time(V)[V]","V[V]","time(T)[C]","Temp[c]","cycle_time[s]","ave_Temp[C]"])
             
     
             
     except:
-        if 
+        keithley1
+        if "data" in globals:
+            data.to_csv(path + file_name, sep="\t", index=False)
         exc_type, exc_value, exc_tb = sys.exc_info()
         print(exc_type, exc_value, "[in line",exc_tb.tb_lineno,"]")
 
@@ -241,7 +244,7 @@ while True:
     if ender == "q":
         print("Bye.")
         break
-        
+#######################################################################################################################        
 if __name__ == "__main__":
     sample_name = 'ferri_ferrocyanide_0.4M'
     I = np.array([0.1,0.2,0.3,0.4]) # 各測定の電流値をmA単位で入力。numpyのリストにしておくと1000で割って容易にA単位に直せる。
