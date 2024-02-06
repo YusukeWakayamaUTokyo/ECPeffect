@@ -181,6 +181,7 @@ def calculation():
 
 
 ### conducting functions ###
+connection_test()
 while True:
     meas_No = input("How many times do you plan to measure?:") #measurement number
     try:
@@ -221,9 +222,18 @@ while True:
                     break
                 else:
                     print("?")
+                
+        wait_time = float(input("How much time [h] should passe before measurements?:")) * 3600
+        int_time = float(input("Time between measurements [h]:")) * 3600 # interval time
+        current_cycle = 0
+        while current_cycle < len(sample_names):
+            print("/nNow cycle" + str(current_cycle + 1) + "is being conducted.\n")
+            data = pd.DataFrame(columns=["time(V)[V]","V[V]","time(T)[C]","Temp[c]","cycle_time[s]","ave_Temp[C]"])
+            
     
             
     except:
+        if 
         exc_type, exc_value, exc_tb = sys.exc_info()
         print(exc_type, exc_value, "[in line",exc_tb.tb_lineno,"]")
 
