@@ -20,8 +20,8 @@ B_constant = 4390
 R25 = 100000
 T25 = 298.15
 
-### Excel settings ###
-keithley1 = Keithley2400("GPIB::22") # thermistor
+#You can change GPIB as you like
+keithley1 = Keithley2400("GPIB::22") # thermistor 
 keithley2 = Keithley2400("GPIB::24") # current_apply
 
 voltage_interval = 0.2
@@ -127,8 +127,8 @@ def thermistor():
 
         R = V/pulse_current
         temperature = 1/(1/T25 + math.log(R/R25)/B_constant) - 273.15
-        sheet.cell(row = step+2, column = 1).value = t2 - base_time
-        sheet.cell(row = step+2, column = 2).value = temperature # calculate a temperature from a voltage value, and record to the excel file
+        sheet.cell(row = step + 2, column = 1).value = t2 - base_time
+        sheet.cell(row = step + 2, column = 2).value = temperature # calculate a temperature from a voltage value, and record to the excel file
 
         target_time = target_time + pulse_interval
         rest_until_target_time = time.time() - base_time - target_time #reset the target time
@@ -174,30 +174,29 @@ def calculation():
 
     ### average temperature of each points within the cycle###
     sheet.cell(row = 1, column = 7).value = 't (s)'
-    for a in range(0,half_period_points*2):
-        sheet.cell(row = starting_cell+a, column = 7).value = a*pulse_interval
+    for a in range(0, half_period_points * 2):
+        sheet.cell(row = starting_cell + a, column = 7).value = a * pulse_interval
     sheet.cell(row = 1, column = 8).value = 'Average temperature (C)'
-    for b in range(0,half_period_points*2): 
+    for b in range(0,half_period_points * 2): 
         total = 0
         row_number = 0
-        for step in range (0,period_number[i]):
-            total = total + (sheet.cell(row = (starting_cell+half_period_points*2) + row_number + b, column = 2).value) # summation 
+        for step in range (0, period_number[i]):
+            total = total + (sheet.cell(row = (starting_cell + half_period_points * 2) + row_number + b, column = 2).value) # summation 
             #1st cycle is rejected
-            row_number = row_number + half_period_points*2 # hop n to n+1, by using row_number
+            row_number = row_number + half_period_points * 2 # hop n to n+1, by using row_number
         #print((b,",","total:",total))
         sheet.cell(row = starting_cell + b, column = 8).value = total/period_number[i] #averaged
 
     ### time of 1 cycle ###
     sheet.cell(row = 1, column = 9).value = 't (s)'
-    for a in range(0,half_period_points):
-        sheet.cell(row = starting_cell+a, column = 9).value = a*pulse_interval # 例えば0.2秒感覚で測定したなら、0.2, 0.4, 0.6...と各セルに入力。
+    for time_monitored in range(0, half_period_points):
+        sheet.cell(row = starting_cell+a, column = 9).value = time_monitored * pulse_interval 
 
-    ### Tox(t) - Tred(t) ### red側につないだとき、つまりサーミスタのついた電極では酸化→還元の順でサイクルが回っているときを想定。
+    ### Tox(t) - Tred(t) ### Assuming oxidative current applied first to the electrode of the thermistor side 
     sheet.cell(row = 1, column = 10).value = 'Tox(t)-Tred(t) (K)'
-#    half_period_points = int(half_period_time[i]/pulse_interval) #次のfor文のために、Tox-Tredの計算に必要な点数を計算。
-    for c in range(0,half_period_points):
-        sheet.cell(row = starting_cell + c, column = 10).value = sheet.cell(row = starting_cell + c, column = 8).value - sheet.cell(row = starting_cell+ c + half_period_points, column = 8).value 
-        # 酸化→還元の順で起こるので、Average emperatureの列から、酸化開始a秒後-還元開始a秒後(a<=half_period_time)をそれぞれ計算。
+    half_period_points = int(half_period_time[i]/pulse_interval) #obtain needed points for calculation
+    for c in range(0, half_period_points):
+        sheet.cell(row = starting_cell + c, column = 10).value = sheet.cell(row = starting_cell + c, column = 8).value - sheet.cell(row = starting_cell + c + half_period_points, column = 8).value 
 
     print('cauculation_done.')
   
@@ -268,33 +267,34 @@ def slack_notify(msg = 'measurement finished'):
 ### conducting functions ###
 
 if __name__ == "__main__":
-    sample_name = 'ferri_ferrocyanide_0.4M'
-    I = np.array([0.1,0.2,0.3,0.4]) # 各測定の電流値をmA単位で入力。numpyのリストにしておくと1000で割って容易にA単位に直せる。
-    period_number = [5000,5000,5000,5000,1,1] #始めが5000だったwakayama
-    half_period_time = [4,4,4,4,4,4]
-    before_measurement_h = 8 # waiting time for thermal equilibrium, at least 3 (unit:hours).
-    measurement_interval_h = 0 # 測定ごとの間隔(hours)。ここを「2」にすると、測定ごとに2時間間隔を空ける。    
+    sample_name = 'Put your sample name here'
+    # You can carry out 4 measurements in a row. (Actually, len(I), len(period_number) or len(half_period_time). You can change the length of the list if you want.)
+    I = np.array([0.1,0.2,0.3,0.4]) # input the amplitude of current [mA]
+    period_number = [5000,5000,5000,5000] #How many cycles in measurements. 
+    half_period_time = [4,4,4,4] # The timing of current flip [s]
+    before_measurement_h = 8 # waiting time for thermal equilibrium, at least 3 [hour], (this is the empirical value, you don't have to obey)
+    measurement_interval_h = 2 # interval waiting time between measurements [hour]   
 
-    measurements = int(input('number of measrurements: ')) # 繰り返し測定の回数を入力。
+    measurements = int(input('number of measrurements: ')) # the number of the measurements
 
     # ユーザ名メモ。Peltier, kimilb2019_8, fmato
     # C:\Users\kimilab2019_8\Desktop\filename.xlsx
 
-    time_calculation() # 測定時間をhmsで計算し、表示。
+    time_calculation() # estimated time (actual measurement time is a bit longer)
     ec_confirmation()
-    confirmation=int(input('conduct measuremant : 1')) # 測定条件に問題なければ1、問題あれば1以外の文字を入力。
+    confirmation=int(input('conduct measuremant : 1')) # Put 1, when experimental conditions are alright, . Otherwise measurement won't be executed
 
-    np.array(I, dtype=float)# floatリストに変換
-    I = I/1000 # 電流値をA単位へ変換
-    np.array(period_number, dtype=int) # integerリストに変換
-    np.array(half_period_time, dtype=float)# floatリストに変換
+    np.array(I, dtype=float)# convert to float
+    I = I/1000 # convert from [mA] to [A]
+    np.array(period_number, dtype=int) # convert to integer
+    np.array(half_period_time, dtype=float)# convert to float
 
-    if confirmation == 1: #測定条件に相違なければ繰り返し測定を実行。
+    if confirmation == 1: # when condition is judged alright
         connection_test()
         print(datetime.now())
         time.sleep(before_measurement_h*3600)
         day = datetime.now().strftime("%Y_%m_%d")
-        path_peltier = "C:/Users/Hiroshi/Documents/data/peltier/"
+        path_peltier = "Put your path here"
         path = path_peltier + day
         if os.path.exists(path) == False:
             os.chdir(path_peltier)
@@ -304,21 +304,21 @@ if __name__ == "__main__":
         for i in range(measurements):
             print(datetime.now())
             step = 0
-            book = openpyxl.Workbook() # エクセルファイルを作成
+            book = openpyxl.Workbook() # make a excel file
             sheet = book.worksheets[0] 
-            initial_settings() #ソースメータの電源を入れる
+            initial_settings() #turn on sourcemeters
             half_period_points = int(half_period_time[i]/pulse_interval) 
-            required_time = (period_number[i]+1) * half_period_time[i] *2 #測定時間（秒）を計算。 
+            required_time = (period_number[i]+1) * half_period_time[i] *2 #calculate measurement time [s]
             thermistor_steps = int(required_time/pulse_interval)+int(1/pulse_interval) 
 
             sheet.cell(row = 7, column = 5).value = period_number[i]+1
             sheet.cell(row = 8, column = 5).value = half_period_time[i]
 
             base_time = time.time()
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=2) # サーミスタと電流引加をマルチスレッドで実行。マルチプロセスだとなぜか上手く動かない。
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=2) # perform in multithreads
             executor.submit(thermistor)
             executor.submit(current_apply(I[i]))
-            executor.shutdown() #両方の操作が終わったら次の操作へ。
+            executor.shutdown()
             date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
             book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i]*1000, half_period_time[i], period_number[i]))
             calculation()
@@ -330,6 +330,4 @@ if __name__ == "__main__":
         print('finished.')
 
     else: 
-    #設定ミスなどがあれば測定前に測定をキャンセルする。
-    # jupyter lab側から測定を中止するのはなぜか時間がかかったり再起動が必要だったりしてとにかく面倒。
         print('cancelled')
