@@ -21,6 +21,8 @@ T25 = 298.15
 keithley1 = Keithley2400("GPIB::22") # thermistor
 keithley2 = Keithley2400("GPIB::24") # current_apply
 
+path_peltier = "Put your folder here." # in the style of "C:/Users/YOUR_PC_NAME/XXX/YYY/" (The last must be "/")
+
 voltage_interval = 0.2
 
 def initial_settings():
@@ -46,16 +48,16 @@ def initial_settings():
     keithley2.compliance_voltage = 1.3 # limit voltage near the potential window of the water
 
 # print the estimated time (h/m/s) for measurement before starting
-def time_calculation():
+def time_calculation(before, interval, cycle, flip):
     # in the unit of second
-    total_required_time = before_measurement_h * 3600 + measurement_interval_h * 3600 * (measurements - 1) + measurements   
+    total_time = before * 3600 + interval * 3600 * (len(cycle) - 1) + measurements   
     for j in range(measurements) :
         total_required_time = total_required_time + (period_number[j] + 1) * half_period_time[j] * 2  
     
     # convert into (h/m/s)
-    required_time_h = int(total_required_time/3600)
-    required_time_m = int((total_required_time-required_time_h*3600)/60)
-    required_time_s = int(total_required_time -(required_time_h*3600+required_time_m*60))
+    required_time_h = int(total_time / 3600)
+    required_time_m = int((total_time - required_time_h * 3600) / 60)
+    required_time_s = int(total_time - (required_time_h * 3600 + required_time_m * 60))
     print('total required_time: ', required_time_h,' h ',required_time_m,' m ',required_time_s,' s ')
 
 def ec_confirmation():
@@ -201,7 +203,6 @@ while True:
             cycle = input("How many cycles?:")
             flip_time = input("How long [s] will the cycle?:")
             if sample_name == "q" or current == "q" or cycle == "q" or flip_time == "q":
-                print("cancelled.")
                 break
             sample_names.append(sample_name)
             currents.append(float(current))
@@ -222,20 +223,57 @@ while True:
                     break
                 else:
                     print("?")
-                
+
+        if sample_name == "q" or current == "q" or cycle == "q" or flip_time == "q":
+                print("cancelled.")
+                break
+        
         wait_time = float(input("How much time [h] should passe before measurements?:")) * 3600
         int_time = float(input("Time between measurements [h]:")) * 3600 # interval time
+
+        time_calculation()
+        ec_confirmation()
         
         current_cycle = 0
         while current_cycle < len(sample_names):
+            if current_cycle == 0:
+                print("waiting...")
+                time.sleep(wait_time)
+            else:
+                print("waiting..")
+                time.sleep(int_time)
+            date = datetime.now().strftime("%Y_%m_%d") 
+            path = path_peltier + date + "/"
+            if os.path.exists(path) == False:
+                os.chdir(path_peltier)
+                os.mkdir(date)
             print("\nNow cycle" + str(current_cycle + 1) + "is being conducted.\n")
-            data = pd.DataFrame(columns=["time(V)[V]","V[V]","time(T)[C]","Temp[c]","cycle_time[s]","ave_Temp[C]"])
-            
-    
-            
+            data_V = pd.DataFrame(columns=["time(V)[V]","V[V]"])
+            data_T = pd.DataFrame(columns=["time(T)[C]","Temp[c]","cycle_time[s]","ave_Temp[C]"])
+            file_name = "ECP_" + sample_names[current_cycle] + datetime.now().strftime("_%m_%d_%H_%M_%S") + ".txt"
+            base_time = time.time()
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+            executor.submit(thermistor)
+            executor.submit(current_apply(currents[current_cycle]))
+            executor.shutdown()
+            data = pd.concat([data_V, data_T], axis = 1)
+            data.to_csv(path + file_name, sep="\t", index=False)
+            print("\ndone.")
+            current_cycle += 1
+        print("\nAll measurements were completed.")
+    except KeybordInterrupt:
+        keithley1.shutdown()
+        keithley2.shutdown()
+        if "data_V" in globals():
+            data = pd.concat([data_V, data_T], axis = 1)
+            data.to_csv(path + file_name, sep="\t", index=False)
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(exc_type, exc_value, "[in line",exc_tb.tb_lineno,"]")
     except:
-        keithley1
-        if "data" in globals:
+        keithley1.shutdown()
+        keithley2.shutdown()
+        if "data_V" in globals():
+            data = pd.concat([data_V, data_T], axis = 1)
             data.to_csv(path + file_name, sep="\t", index=False)
         exc_type, exc_value, exc_tb = sys.exc_info()
         print(exc_type, exc_value, "[in line",exc_tb.tb_lineno,"]")
