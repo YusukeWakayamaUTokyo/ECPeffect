@@ -10,7 +10,7 @@ from datetime import datetime
 import concurrent.futures
 
 ### thermistor settings ###
-pulse_interval = 0.4
+pulse_interval = 0.4 # second
 pulse_current = 0.000001 # 1uA
 
 #thermistor 104JT-025
@@ -48,26 +48,15 @@ def initial_settings():
     keithley2.compliance_voltage = 1.3 # limit voltage near the potential window of the water
 
 # print the estimated time (h/m/s) for measurement before starting
-def time_calculation(before, interval, cycle, flip):
+def time_calculation(before, interval, cycle, flip): # float, float, list, list
     # in the unit of second
-    total_time = before * 3600 + interval * 3600 * (len(cycle) - 1) + measurements   
-    for j in range(measurements) :
-        total_required_time = total_required_time + (period_number[j] + 1) * half_period_time[j] * 2  
+    total_time = before * 3600 + interval * 3600 * (len(cycle) - 1) + np.dot(np.array(cycle), (np.array(flip) * 2))
     
     # convert into (h/m/s)
     required_time_h = int(total_time / 3600)
     required_time_m = int((total_time - required_time_h * 3600) / 60)
     required_time_s = int(total_time - (required_time_h * 3600 + required_time_m * 60))
     print('total required_time: ', required_time_h,' h ',required_time_m,' m ',required_time_s,' s ')
-
-def ec_confirmation():
-    print('sample name:', sample_name)
-    print('\n')
-    print('before measurement:', before_measurement_h,'h')
-    for i in range(measurements):
-        print('experiment', i+1)
-        print('    ',I[i],'mA,',half_period_time[i],'s,',period_number[i],'+1 periods')
-    print('measurement interval:',measurement_interval_h,'h')
 
 def connection_test():
     keithley1.reset()
@@ -94,64 +83,69 @@ def connection_test():
 def thermistor():
     target_time = 0
     time_accuracy = 0.001 # time for sleep
-    rest_until_target_time = time.time() - base_time - target_time
+    global data_T
+    rest_until_target_time = time.time() - base_time - target_time # base_time (global)
     for step in range(thermistor_steps):
         while rest_until_target_time < 0: # wait until reaching target time
             time.sleep(time_accuracy) #wait for time_accuracy, then recalculate target time
             rest_until_target_time = time.time() - base_time - target_time
-        keithley1.source_current = pulse_current # when reaching the target time, apply current
+        keithley1.source_current = pulse_current # when reaching the target time, apply current. pulse_curremt(global)
         keithley1.ramp_to_current(pulse_current,steps=1, pause = 0.000001)
         t2 = time.time()
         V = keithley1.voltage
         keithley1.source_current = 0 # after obtaining data turn off the current immediately
 
         R = V/pulse_current
-        temperature = 1/(1/T25 + math.log(R/R25)/B_constant) - 273.15
-        sheet.cell(row = step+2, column = 1).value = t2 - base_time
-        sheet.cell(row = step+2, column = 2).value = temperature # calculate a temperature from a voltage value, and record to the excel file
+        temp = 1/(1/T25 + math.log(R/R25)/B_constant) - 273.15
+        data_add = pd.DataFrame([t2 - base_time, temp], columns=["time(T)[s]","Temp[c]"])
+        data_T = pd.concat([data_T, data_add], axis = 1)
 
         target_time = target_time + pulse_interval
         rest_until_target_time = time.time() - base_time - target_time #reset the target time
     keithley1.shutdown()
-    print('thermistor_done.')
+    print('thermistor done.')
 
 # apply a current (alternating square wave current) to the ECP cell 
-def current_apply(current):
-    target_time = half_period_time[i]
+def current_apply(applied_current, cycle, flip):
+    target_time = flip
     voltage_time = voltage_interval
     time_accuracy = 0.001
-
-    rest_until_target_time = time.time() - base_time - target_time
-    for step in range((period_number[i]+1) *2):
-        keithley2.ramp_to_current(current,steps=3)
+    global data_V
+    rest_until_target_time = time.time() - base_time - target_time # base_time(global)
+    for step in range((cycle + 1) * 2):
+        keithley2.ramp_to_current(applied_current,steps=3)
         while rest_until_target_time < 0: # wait until the time to reverse the current direction
             rest_voltage = time.time()-base_time - voltage_time
-            while rest_voltage<0 and rest_until_target_time<0: # recird voltage vales, priotizing current flipping
+            while rest_voltage<0 and rest_until_target_time < 0: # recird voltage vales, priotizing current flipping
                 time.sleep(time_accuracy)
                 rest_voltage = time.time()-base_time - voltage_time
                 rest_until_target_time = time.time() - base_time - target_time
-            sheet.cell(row = int(voltage_time/voltage_interval)+1, column = 12).value = time.time()-base_time
-            sheet.cell(row = int(voltage_time/voltage_interval)+1, column = 13).value = keithley2.voltage # record to the excel file
+            data_add = pd.DataFrame([time.time()-base_time, keithley2.voltage], columns=["time(V)[s]","V[V]"])
+            data_V = pd.concat([data_V, data_add], axis = 1)
             voltage_time = voltage_time + voltage_interval #reset the time to record voltage
             rest_until_target_time = time.time() - base_time - target_time
-        current = current*(-1)
-        target_time = target_time + half_period_time[i]
+        applied_current *= -1
+        target_time += flip
         rest_until_target_time = time.time() - base_time - target_time
 
-    # at last, apply extra current for 1 sec to justify the calculation of Tox-Tred(最後に、1秒だけ余分に電流を流す。Tox-Tredの計算の帳尻を合わせるため。)
-    keithley2.ramp_to_current(current,steps=3)
-    time.sleep(1)
-    keithley2.shutdown()
-    sheet.cell(row = 11, column = 5).value = voltage_interval # you can save voltage_interval outside of the function
-    sheet.cell(row = 6, column = 5).value = current*1000 # record current to the excel file (current was difined in this function)
-                                                        
-    print('current_apply_done.')
+    keithley2.shutdown()                                          
+    print('current_apply done.')
 
-def calculation():
-    starting_cell = 2 # row number of the cell corresponding to 0 s
-#    starting_cell_calc = starting_cell + half_period_points*2 # row number of the cell corresponding to 0 s
-#    print("test, starting_cell:", starting_cell_calc)
+def calculation(cycle, flip):
+    global data_T
+    measured_time = [0]
+    while measured_time[-1] < flip * 2:
+        measured_time.append(round(measured_time[-1] + pulse_interval, 1)) # pulse_interval(global)
+        
+    i = 0
+    data_num = [] # the number of the data at each time point
+    ave_temp = [] # averaged temperature
+    while i < len(measured_time):
+        ave_temp.append(0)
+        data_num.append(0)
+        i += 1
 
+    raw_temp = data_T.loc[~data_T["time(T)[s]" < flip * 2].copy()
     ### average temperature of each points within the cycle###
     sheet.cell(row = 1, column = 7).value = 't (s)'
     for a in range(0,half_period_points*2):
@@ -179,7 +173,7 @@ def calculation():
         sheet.cell(row = starting_cell + c, column = 10).value = sheet.cell(row = starting_cell + c, column = 8).value - sheet.cell(row = starting_cell+ c + half_period_points, column = 8).value 
         # 酸化→還元の順で起こるので、Average emperatureの列から、酸化開始a秒後-還元開始a秒後(a<=half_period_time)をそれぞれ計算。
 
-    print('cauculation_done.')
+    print('cauculation done.')
 
 
 ### conducting functions ###
@@ -232,7 +226,6 @@ while True:
         int_time = float(input("Time between measurements [h]:")) * 3600 # interval time
 
         time_calculation()
-        ec_confirmation()
         
         current_cycle = 0
         while current_cycle < len(sample_names):
@@ -254,7 +247,7 @@ while True:
             base_time = time.time()
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             executor.submit(thermistor)
-            executor.submit(current_apply(currents[current_cycle]))
+            executor.submit(current_apply(currents[current_cycle], cycles[current_cycle], flip_times[current_cycle]))
             executor.shutdown()
             data = pd.concat([data_V, data_T], axis = 1)
             data.to_csv(path + file_name, sep="\t", index=False)
