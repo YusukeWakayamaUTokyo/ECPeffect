@@ -97,7 +97,7 @@ def thermistor():
 
         R = V/pulse_current
         temp = 1/(1/T25 + math.log(R/R25)/B_constant) - 273.15
-        data_add = pd.DataFrame([t2 - base_time, temp], columns=["time(T)[s]","Temp[c]"])
+        data_add = pd.DataFrame([t2 - base_time, temp], columns=["time(T)[s]","Temp[C]"])
         data_T = pd.concat([data_T, data_add], axis = 1)
 
         target_time = target_time + pulse_interval
@@ -146,37 +146,25 @@ def calculation(cycle, flip):
         i += 1
 
     raw_temp = data_T.loc[~data_T["time(T)[s]" < flip * 2].copy()
-    ### average temperature of each points within the cycle###
-    sheet.cell(row = 1, column = 7).value = 't (s)'
-    for a in range(0,half_period_points*2):
-        sheet.cell(row = starting_cell+a, column = 7).value = a*pulse_interval
-    sheet.cell(row = 1, column = 8).value = 'Average temperature (C)'
-    for b in range(0,half_period_points*2): 
-        total = 0
-        row_number = 0
-        for step in range (0,period_number[i]):
-            total = total + (sheet.cell(row = (starting_cell+half_period_points*2) + row_number + b, column = 2).value) # summation 
-            #1st cycle is rejected
-            row_number = row_number + half_period_points*2 # hop n to n+1, by using row_number
-        #print((b,",","total:",total))
-        sheet.cell(row = starting_cell + b, column = 8).value = total/period_number[i] #averaged
+    i = 0
+    for point in raw_temp["Temp[C]"]:
+        if i == len(measured_time):
+            i = 0
+        else:
+            ave_temp[i] +=  point
+            data_num[i] += 1
+            i += 1
+        
+    ave_temp = list(np.array(ave_temp) / np.array(data_num))
+    data_add = pd.DataFrame([measured_time, ave_temp], columns = ["cycle_time[s]","ave_Temp[C]"])
 
-    ### time of 1 cycle ###
-    sheet.cell(row = 1, column = 9).value = 't (s)'
-    for a in range(0,half_period_points):
-        sheet.cell(row = starting_cell+a, column = 9).value = a*pulse_interval # 例えば0.2秒感覚で測定したなら、0.2, 0.4, 0.6...と各セルに入力。
-
-    ### Tox(t) - Tred(t) ### red側につないだとき、つまりサーミスタのついた電極では酸化→還元の順でサイクルが回っているときを想定。
-    sheet.cell(row = 1, column = 10).value = 'Tox(t)-Tred(t) (K)'
-#    half_period_points = int(half_period_time[i]/pulse_interval) #次のfor文のために、Tox-Tredの計算に必要な点数を計算。
-    for c in range(0,half_period_points):
-        sheet.cell(row = starting_cell + c, column = 10).value = sheet.cell(row = starting_cell + c, column = 8).value - sheet.cell(row = starting_cell+ c + half_period_points, column = 8).value 
-        # 酸化→還元の順で起こるので、Average emperatureの列から、酸化開始a秒後-還元開始a秒後(a<=half_period_time)をそれぞれ計算。
+    data_T = pd.concat([data_T, data_add], axis = 1)
 
     print('cauculation done.')
 
 
 ### conducting functions ###
+########################################################################################################################################################################################################################
 connection_test()
 while True:
     meas_No = input("How many times do you plan to measure?:") #measurement number
@@ -241,8 +229,8 @@ while True:
                 os.chdir(path_peltier)
                 os.mkdir(date)
             print("\nNow cycle" + str(current_cycle + 1) + "is being conducted.\n")
-            data_V = pd.DataFrame(columns=["time(V)[V]","V[V]"])
-            data_T = pd.DataFrame(columns=["time(T)[C]","Temp[c]","cycle_time[s]","ave_Temp[C]"])
+            data_V = pd.DataFrame(columns=["time(V)[s]","V[V]"])
+            data_T = pd.DataFrame(columns=["time(T)[s]","Temp[C]","cycle_time[s]","ave_Temp[C]"])
             file_name = "ECP_" + sample_names[current_cycle] + datetime.now().strftime("_%m_%d_%H_%M_%S") + ".txt"
             base_time = time.time()
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
@@ -275,70 +263,3 @@ while True:
     if ender == "q":
         print("Bye.")
         break
-#######################################################################################################################        
-if __name__ == "__main__":
-    sample_name = 'ferri_ferrocyanide_0.4M'
-    I = np.array([0.1,0.2,0.3,0.4]) # 各測定の電流値をmA単位で入力。numpyのリストにしておくと1000で割って容易にA単位に直せる。
-    period_number = [5000,5000,5000,5000,1,1] #始めが5000だったwakayama
-    half_period_time = [4,4,4,4,4,4]
-    before_measurement_h = 8 # waiting time for thermal equilibrium, at least 3 (unit:hours).
-    measurement_interval_h = 0 # 測定ごとの間隔(hours)。ここを「2」にすると、測定ごとに2時間間隔を空ける。    
-
-    measurements = int(input('number of measrurements: ')) # 繰り返し測定の回数を入力。
-
-    # ユーザ名メモ。Peltier, kimilb2019_8, fmato
-    # C:\Users\kimilab2019_8\Desktop\filename.xlsx
-
-    time_calculation() # 測定時間をhmsで計算し、表示。
-    ec_confirmation()
-    confirmation=int(input('conduct measuremant : 1')) # 測定条件に問題なければ1、問題あれば1以外の文字を入力。
-
-    np.array(I, dtype=float)# floatリストに変換
-    I = I/1000 # 電流値をA単位へ変換
-    np.array(period_number, dtype=int) # integerリストに変換
-    np.array(half_period_time, dtype=float)# floatリストに変換
-
-    if confirmation == 1: #測定条件に相違なければ繰り返し測定を実行。
-        connection_test()
-        print(datetime.now())
-        time.sleep(before_measurement_h*3600)
-        day = datetime.now().strftime("%Y_%m_%d")
-        path_peltier = "C:/Users/Hiroshi/Documents/data/peltier/"
-        path = path_peltier + day
-        if os.path.exists(path) == False:
-            os.chdir(path_peltier)
-            os.mkdir(day)
-        else:
-            pass
-        for i in range(measurements):
-            print(datetime.now())
-            step = 0
-            book = openpyxl.Workbook() # エクセルファイルを作成
-            sheet = book.worksheets[0] 
-            initial_settings() #ソースメータの電源を入れる
-            half_period_points = int(half_period_time[i]/pulse_interval) 
-            required_time = (period_number[i]+1) * half_period_time[i] *2 #測定時間（秒）を計算。 
-            thermistor_steps = int(required_time/pulse_interval)+int(1/pulse_interval) 
-
-            sheet.cell(row = 7, column = 5).value = period_number[i]+1
-            sheet.cell(row = 8, column = 5).value = half_period_time[i]
-
-            base_time = time.time()
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=2) # サーミスタと電流引加をマルチスレッドで実行。マルチプロセスだとなぜか上手く動かない。
-            executor.submit(thermistor)
-            executor.submit(current_apply(I[i]))
-            executor.shutdown() #両方の操作が終わったら次の操作へ。
-            date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-            book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i]*1000, half_period_time[i], period_number[i]))
-            calculation()
-            #chart_creation()
-            book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i]*1000, half_period_time[i], period_number[i]))
-            if i == measurements-1:
-                break
-            time.sleep(measurement_interval_h * 3600)
-        print('finished.')
-
-    else: 
-    #設定ミスなどがあれば測定前に測定をキャンセルする。
-    # jupyter lab側から測定を中止するのはなぜか時間がかかったり再起動が必要だったりしてとにかく面倒。
-        print('cancelled')
