@@ -10,7 +10,7 @@ from datetime import datetime
 import concurrent.futures
 
 ### thermistor settings ###
-pulse_interval = 0.4 # second
+pulse_interval = 0.5 # second
 pulse_current = 0.000001 # 1uA
 
 #thermistor 104JT-025
@@ -50,7 +50,7 @@ def initial_settings():
 # print the estimated time (h/m/s) for measurement before starting
 def time_calculation(before, interval, cycle, flip): # float, float, list, list
     # in the unit of second
-    total_time = before * 3600 + interval * 3600 * (len(cycle) - 1) + np.dot(np.array(cycle), (np.array(flip) * 2))
+    total_time = before + interval * (len(cycle) - 1) + np.dot(np.array(cycle) + 1, (np.array(flip) * 2))
     
     # convert into (h/m/s)
     required_time_h = int(total_time / 3600)
@@ -84,25 +84,32 @@ def thermistor():
     target_time = 0
     time_accuracy = 0.001 # time for sleep
     global data_T
+    global thermistor_steps #maybe you don't have to import these parameters using global
+    global pulse_current
+    global pulse_interval
+    global R25
+    global B_constant
+    global T25
     rest_until_target_time = time.time() - base_time - target_time # base_time (global)
     for step in range(thermistor_steps):
         while rest_until_target_time < 0: # wait until reaching target time
             time.sleep(time_accuracy) #wait for time_accuracy, then recalculate target time
             rest_until_target_time = time.time() - base_time - target_time
         keithley1.source_current = pulse_current # when reaching the target time, apply current. pulse_curremt(global)
-        keithley1.ramp_to_current(pulse_current,steps=1, pause = 0.000001)
+        keithley1.ramp_to_current(pulse_current, steps=1, pause = 0.000001)
         t2 = time.time()
         V = keithley1.voltage
         keithley1.source_current = 0 # after obtaining data turn off the current immediately
 
-        R = V/pulse_current
-        temp = 1/(1/T25 + math.log(R/R25)/B_constant) - 273.15
-        data_add = pd.DataFrame([t2 - base_time, temp], columns=["time(T)[s]","Temp[C]"])
-        data_T = pd.concat([data_T, data_add], axis = 1)
+        R = V/  pulse_current
+        temp = 1 / (1 / T25 + math.log(R / R25) / B_constant) - 273.15
+        data_add = pd.DataFrame([[t2 - base_time, temp]], columns=["time(T)[s]","Temp[C]"])
+        data_T = pd.concat([data_T, data_add], axis = 0) # add data to future text file
 
         target_time = target_time + pulse_interval
         rest_until_target_time = time.time() - base_time - target_time #reset the target time
     keithley1.shutdown()
+    data_T.reset_index(drop = True, inplace = True)
     print('thermistor done.')
 
 # apply a current (alternating square wave current) to the ECP cell 
@@ -120,15 +127,16 @@ def current_apply(applied_current, cycle, flip):
                 time.sleep(time_accuracy)
                 rest_voltage = time.time()-base_time - voltage_time
                 rest_until_target_time = time.time() - base_time - target_time
-            data_add = pd.DataFrame([time.time()-base_time, keithley2.voltage], columns=["time(V)[s]","V[V]"])
-            data_V = pd.concat([data_V, data_add], axis = 1)
+            data_add = pd.DataFrame([[time.time() - base_time, keithley2.voltage]], columns=["time(V)[s]","V[V]"])
+            data_V = pd.concat([data_V, data_add], axis = 0)
             voltage_time = voltage_time + voltage_interval #reset the time to record voltage
             rest_until_target_time = time.time() - base_time - target_time
         applied_current *= -1
         target_time += flip
         rest_until_target_time = time.time() - base_time - target_time
 
-    keithley2.shutdown()                                          
+    keithley2.shutdown() 
+    data_V.reset_index(drop = True, inplace = True)
     print('current_apply done.')
 
 def calculation(cycle, flip):
@@ -145,7 +153,8 @@ def calculation(cycle, flip):
         data_num.append(0)
         i += 1
 
-    raw_temp = data_T.loc[~data_T["time(T)[s]" < flip * 2].copy()
+    raw_temp = data_T.loc[~(data_T["time(T)[s]"] < flip * 2)].copy()
+    
     i = 0
     for point in raw_temp["Temp[C]"]:
         if i == len(measured_time):
@@ -156,8 +165,7 @@ def calculation(cycle, flip):
             i += 1
         
     ave_temp = list(np.array(ave_temp) / np.array(data_num))
-    data_add = pd.DataFrame([measured_time, ave_temp], columns = ["cycle_time[s]","ave_Temp[C]"])
-
+    data_add = pd.DataFrame({"cycle_time[s]": measured_time, "ave_Temp[C]": ave_temp})
     data_T = pd.concat([data_T, data_add], axis = 1)
 
     print('cauculation done.')
@@ -179,12 +187,12 @@ while True:
         flip_times = []
         i = 0
         while i < meas_No:
-            print("Cycle No" + str(i + 1) + ".\n") 
+            print("\nCycle No" + str(i + 1) + ".\n") 
             sample_name = input("Put your sample name:")
             current = input("Current [mA]:")
             cycle = input("How many cycles?:")
             flip_time = input("How long [s] will the cycle?:")
-            if sample_name == "q" or current == "q" or cycle == "q" or flip_time == "q":
+            if current == "q" or cycle == "q" or flip_time == "q":
                 break
             sample_names.append(sample_name)
             currents.append(float(current))
@@ -206,14 +214,14 @@ while True:
                 else:
                     print("?")
 
-        if sample_name == "q" or current == "q" or cycle == "q" or flip_time == "q":
+        if current == "q" or cycle == "q" or flip_time == "q":
                 print("cancelled.")
                 break
         
         wait_time = float(input("How much time [h] should passe before measurements?:")) * 3600
         int_time = float(input("Time between measurements [h]:")) * 3600 # interval time
 
-        time_calculation()
+        time_calculation(wait_time, int_time, cycles, flip_times)
         
         current_cycle = 0
         while current_cycle < len(sample_names):
@@ -228,32 +236,33 @@ while True:
             if os.path.exists(path) == False:
                 os.chdir(path_peltier)
                 os.mkdir(date)
-            print("\nNow cycle" + str(current_cycle + 1) + "is being conducted.\n")
+            print("\nNow cycle " + str(current_cycle + 1) + " is being conducted.\n")
             data_V = pd.DataFrame(columns=["time(V)[s]","V[V]"])
-            data_T = pd.DataFrame(columns=["time(T)[s]","Temp[C]","cycle_time[s]","ave_Temp[C]"])
-            file_name = "ECP_" + sample_names[current_cycle] + datetime.now().strftime("_%m_%d_%H_%M_%S") + ".txt"
+            data_T = pd.DataFrame(columns=["time(T)[s]","Temp[C]"])
+
+            half_period_points = int(flip_times[current_cycle] / pulse_interval) 
+            required_time = (cycles[current_cycle] + 1) * flip_times[current_cycle] * 2 #calculate measurement time [s]
+            thermistor_steps = int(required_time / pulse_interval)+int(1 / pulse_interval) 
+            
+            file_name = "ECP_" + sample_names[current_cycle] + "_Cycle" + str(cycles[current_cycle]) + "+1_" + str(currents[current_cycle] * 1000) + "mA" + datetime.now().strftime("_%m_%d_%H_%M_%S") + ".txt"
+            initial_settings() # do be needed
             base_time = time.time()
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             executor.submit(thermistor)
-            executor.submit(current_apply(currents[current_cycle], cycles[current_cycle], flip_times[current_cycle]))
+            executor.submit(current_apply, currents[current_cycle], cycles[current_cycle], flip_times[current_cycle])
             executor.shutdown()
+
+            calculation(cycles[current_cycle], flip_times[current_cycle])
             data = pd.concat([data_V, data_T], axis = 1)
             data.to_csv(path + file_name, sep="\t", index=False)
             print("\ndone.")
             current_cycle += 1
         print("\nAll measurements were completed.")
-    except KeybordInterrupt:
-        keithley1.shutdown()
-        keithley2.shutdown()
-        if "data_V" in globals():
-            data = pd.concat([data_V, data_T], axis = 1)
-            data.to_csv(path + file_name, sep="\t", index=False)
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        print(exc_type, exc_value, "[in line",exc_tb.tb_lineno,"]")
     except:
         keithley1.shutdown()
         keithley2.shutdown()
         if "data_V" in globals():
+            calculation(cycles[current_cycle], flip_times[current_cycle])
             data = pd.concat([data_V, data_T], axis = 1)
             data.to_csv(path + file_name, sep="\t", index=False)
         exc_type, exc_value, exc_tb = sys.exc_info()
