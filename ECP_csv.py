@@ -195,9 +195,9 @@ while True:
             if current == "q" or cycle == "q" or flip_time == "q":
                 break
             sample_names.append(sample_name)
-            currents.append(float(current))
+            currents.append(float(current) / 1000)
             cycles.append(int(cycle))
-            flip_times.append(float(flip_time) / 2)
+            flip_times.append(int(flip_time) / 2)
             while True:
                 confirm = input("Are you sure? [y/n]:")
                 if confirm == "y":
