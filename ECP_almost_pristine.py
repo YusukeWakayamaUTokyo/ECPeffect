@@ -168,6 +168,7 @@ def current_apply(current):
     print('current_apply_done.')
 
 def calculation():
+    global half_period_points
     starting_cell = 2 # row number of the cell corresponding to 0 s
 #    starting_cell_calc = starting_cell + half_period_points*2 # row number of the cell corresponding to 0 s
 #    print("test, starting_cell:", starting_cell_calc)
