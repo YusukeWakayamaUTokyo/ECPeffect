@@ -201,7 +201,7 @@ def calculation():
 
     print('cauculation_done.')
   
-""" # You can create charts on the excel file, if you want.
+""" # You can create charts on the excel file, if you want. (But this function tends to raise errors)
 def chart_creation():
     chart_1 = ScatterChart() # Somehow creating a large chart and filling makes an error, thus charts were devided　なぜか1つのchartに代入しなおす方法にするとエラーを吐くため、3つのchartを分けている.
     chart_2 = ScatterChart() 
