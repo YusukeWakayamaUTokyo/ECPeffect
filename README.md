@@ -18,7 +18,7 @@ https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html#346210
 
 ## Using codes
 
-You can copy & paste your preferd version of the program file (ECP_almost_pristine.py and ECP_csv.py) to your jupyter note book.
+You can copy & paste your preferd version of the program file (ECP.py and ECP_txt.py) to your jupyter note book.
 
 Before using these codes, you should make sure some experimental conditions. First of all, you have to rewrite the code at the variable 'path_peltier' with your path to access the folder saving experimental results. If it is hard to find, you can use Crtl + f (Command + f; for Mac users) to identify the location of 'path_peltier'.
 
@@ -35,7 +35,7 @@ You, of courese, can change GPIB of the sourcemeters. And if you use different t
 
 
 
-## ECP_almost_pristine.py (the editted program file used in the paper)
+## ECP.py (the program file used in the paper)
 
 In order to change experimental conditions you have to vary the file itself each time.
 
@@ -46,12 +46,12 @@ Result files are saved in an excel file.
 Currently, the two functions in this program are in the state of comment out. One is for creating chart in the excel file automatically, the other is for sending a slack message when the experiment is done.
 You can use them if you want.
 
-### modules (python) needed in ECP_almost_pristine.py
+### modules (python) needed in ECP.py
 - openpyxl (for saving the results) #not default module
 - request (for notification via Slack (the function for this is disabled as the default)) #possibly not default module
 
 
-## ECP_csv.py (written to make it easier to use (hopefully:) ))
+## ECP_txt.py (written to make it easier to use (hopefully))
 
 Requiring less non-default modules in python. 
 
@@ -65,6 +65,6 @@ The style of inputting 1 period of measurement is different from ECP_almost_pris
 
 The default measurement interval was elongated from 0.4 to 0.5 [s] to be devisible any integer second.
 
-### modules (python) needed in ECP_csv.py
+### modules (python) needed in ECP_txt.py
 - pandas (for saving the results)
 - sys (to get detailed information when errors happen during running this program)
