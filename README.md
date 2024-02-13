@@ -6,7 +6,7 @@ In our experiments, the program has been run using ***Jupyter Notebook*** which 
 
 You can find two program files. Both require some special modules to download into your python environment, but the required modules are different.
 
-Both files use pymeasure for comunicating and controlling sourcemeters, the process needs **EXTRA APPLICATIONS** to be downloaded other than anaconda. You can refer to this page https://qiita.com/matoarea/items/42292f27a9e669a8758a (though it is written in Japanese). You have to donload in the **PROVIDED ODER HERE** or it does not work somehow.
+Both files use pymeasure for comunicating and controlling sourcemeters, the process needs **EXTRA APPLICATIONS** to be downloaded other than anaconda. You can refer to this page https://qiita.com/matoarea/items/42292f27a9e669a8758a (though it is written in Japanese). You have to download in the **PROVIDED ORDER HERE** or it does not work somehow.
 - First one
 
 https://www.ni.com/ja-jp/support/downloads/drivers/download.ni-488-2.html#345631
@@ -39,13 +39,13 @@ You, of courese, can change GPIB of the sourcemeters. And if you use different t
 
 ## ECP_almost_pristine.py (the editted program file used in the paper)
 
-In order to change experimental conditions you have to vary the file itelf each time.
+In order to change experimental conditions you have to vary the file itself each time.
 
 Advantage of this style is you don't have to input conditions, once you put necessary information and you don't change your experimental condition.
 
 Result files are saved in an excel file.
 
-Currently, the two functions in this program is in the state of comment out. One is for creating chart in the excel file automatically, the other is for sending a slack message when the experiment is done.
+Currently, the two functions in this program are in the state of comment out. One is for creating chart in the excel file automatically, the other is for sending a slack message when the experiment is done.
 You can use them if you want.
 
 ### modules (python) needed in ECP_almost_pristine.py
