@@ -63,6 +63,8 @@ Result files are text file separated by tab.
 
 Until you put a "q" to the entry field, this program won't end.
 
+The style of inputting 1 period of measurement is different from ECP_almost_pristine.py. The former one requires half of a period, but this file needs hole period. (Just a matter of length of string in the input() function, you can change this if you want)
+
 The default measurement interval was elongated from 0.4 to 0.5 [s] to be devisible any integer second.
 
 ### modules (python) needed in ECP_csv.py
