@@ -57,7 +57,7 @@ You can use them if you want.
 
 Requiring less non-default modules in python. 
 
-Everytime you run this file, you input experimental conditoins not rewriting directly in this file but filling up entry field popped up.
+Everytime you run this file, you have to input experimental conditoins not rewriting directly in this file but filling up entry fields popped up.
 
 Result files are text file separated by tab.
 
