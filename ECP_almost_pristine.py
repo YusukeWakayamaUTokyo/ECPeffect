@@ -12,15 +12,15 @@ import numpy as np
 import os
 
 ### thermistor settings ###
-pulse_interval = 0.4
-pulse_current = 0.000001 # 1uA
+pulse_interval = 0.4 # This value is near the lower limit. You can change
+pulse_current = 0.000001 # 1uA (You shoul NOT change this value)
 
-#thermistor 104JT-025
+#thermistor 104JT-025 #When you use different thermistors from this you should change the values
 B_constant = 4390
 R25 = 100000
 T25 = 298.15
 
-#You can change GPIB as you like
+# You can change GPIB as you like ######################################################################################################################################################################
 keithley1 = Keithley2400("GPIB::22") # thermistor 
 keithley2 = Keithley2400("GPIB::24") # current_apply
 
@@ -268,13 +268,19 @@ def slack_notify(msg = 'measurement finished'):
 ### conducting functions ###
 
 if __name__ == "__main__":
-    sample_name = 'Put your sample name here'
+    ################################################################################################################################################################################################################
+    ### You have to adjust here ####################################################################################################################################################################################
+    ################################################################################################################################################################################################################
+    path_peltier = "Put your path here" # input a path you want to save experimental results.
+    sample_name = 'Put your sample name here' # This is reflected to the file name
     # You can carry out 4 measurements in a row. (Actually, len(I), len(period_number) or len(half_period_time). You can change the length of the list if you want.)
-    I = np.array([0.1,0.2,0.3,0.4]) # input the amplitude of current [mA]
+    I = np.array([0.1,0.2,0.3,0.4]) # input the amplitude of current [mA], ±'This value' mA will be applied to your samples
     period_number = [5000,5000,5000,5000] #How many cycles in measurements. 
     half_period_time = [4,4,4,4] # The timing of current flip [s]
     before_measurement_h = 8 # waiting time for thermal equilibrium, at least 3 [hour], (this is the empirical value, you don't have to obey)
     measurement_interval_h = 2 # interval waiting time between measurements [hour]   
+    ################################################################################################################################################################################################################
+    ################################################################################################################################################################################################################
 
     measurements = int(input('number of measrurements: ')) # the number of the measurements
 
@@ -295,7 +301,6 @@ if __name__ == "__main__":
         print(datetime.now())
         time.sleep(before_measurement_h*3600)
         day = datetime.now().strftime("%Y_%m_%d")
-        path_peltier = "Put your path here"
         path = path_peltier + day
         if os.path.exists(path) == False:
             os.chdir(path_peltier)
@@ -321,7 +326,7 @@ if __name__ == "__main__":
             executor.submit(current_apply(I[i]))
             executor.shutdown()
             date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-            book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i]*1000, half_period_time[i], period_number[i]))
+            book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i]*1000, half_period_time[i], period_number[i])) #You can change saved file name here
             calculation()
             #chart_creation()
             book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i]*1000, half_period_time[i], period_number[i]))
