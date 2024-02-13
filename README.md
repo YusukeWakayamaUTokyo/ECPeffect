@@ -9,7 +9,7 @@ You can find two program files. Both require some special modules to download in
 Both files use pymeasure for comunicating and controlling sourcemeters, the process needs **EXTRA APPLICATIONS** to be downloaded other than anaconda. You can refer to this page https://qiita.com/matoarea/items/42292f27a9e669a8758a (though it is written in Japanese). You have to download in the **PROVIDED ORDER HERE** or it does not work somehow.
 - First one
 
-https://www.ni.com/ja-jp/support/downloads/drivers/download.ni-488-2.html#345631
+https://www.ni.com/en/support/downloads/drivers/download.ni-488-2.html#345631
 
 - Second one
 
