@@ -22,7 +22,7 @@ https://www.ni.com/ja/support/downloads/drivers/download.ni-visa.html#346210
 
 You can copy & paste your preferd version of the program file (ECP_almost_pristine.py and ECP_csv.py) to your jupyter note book.
 
-Before using these codes, you should make sure some experimental conditions. First of all, you have to rewrite the code at the variable 'path_peltier' with your path to access the folder saving experimental results. If it is hard to find, you can use Crtl + f (Command + f for Mac users) to identify the location of 'path_peltier'.
+Before using these codes, you should make sure some experimental conditions. First of all, you have to rewrite the code at the variable 'path_peltier' with your path to access the folder saving experimental results. If it is hard to find, you can use Crtl + f (Command + f; for Mac users) to identify the location of 'path_peltier'.
 
 You ,of courese, can change GPIB of the sourcemeters. And if you use different types of thermistor, please change the parameters (B_constant, R25 and T25).
 
