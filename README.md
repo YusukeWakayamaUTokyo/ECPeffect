@@ -11,8 +11,6 @@ Both files use pymeasure for comunicating and controlling sourcemeters, the proc
 
 https://www.ni.com/ja-jp/support/downloads/drivers/download.ni-488-2.html#345631
 
-(You can change a language from Japanese to English from ”言語” on the right column on the web page)
-
 - Second one
 
 https://www.ni.com/ja/support/downloads/drivers/download.ni-visa.html#346210
