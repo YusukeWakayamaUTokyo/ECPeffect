@@ -13,7 +13,7 @@ import os
 
 ### thermistor settings ###
 pulse_interval = 0.4 # This value is near the lower limit. You can change
-pulse_current = 0.000001 # 1uA (You shoul NOT change this value)
+pulse_current = 0.000001 # 1uA (You should NOT change this value)
 
 #thermistor 104JT-025 #When you use different thermistors from this you should change the values
 B_constant = 4390
@@ -146,7 +146,7 @@ def current_apply(current):
         keithley2.ramp_to_current(current,steps=3)
         while rest_until_target_time < 0: # wait until the time to reverse the current direction
             rest_voltage = time.time()-base_time - voltage_time
-            while rest_voltage<0 and rest_until_target_time<0: # recird voltage vales, priotizing current flipping
+            while rest_voltage<0 and rest_until_target_time<0: # record voltage values, priotizing current flipping
                 time.sleep(time_accuracy)
                 rest_voltage = time.time()-base_time - voltage_time
                 rest_until_target_time = time.time() - base_time - target_time
@@ -158,7 +158,7 @@ def current_apply(current):
         target_time = target_time + half_period_time[i]
         rest_until_target_time = time.time() - base_time - target_time
 
-    # at last, apply extra current for 1 sec to justify the calculation of Tox-Tred(最後に、1秒だけ余分に電流を流す。Tox-Tredの計算の帳尻を合わせるため。)
+    # at last, apply extra current for 1 sec to justify the calculation of Tox-Tred
     keithley2.ramp_to_current(current,steps=3)
     time.sleep(1)
     keithley2.shutdown()
@@ -170,8 +170,6 @@ def current_apply(current):
 def calculation():
     global half_period_points
     starting_cell = 2 # row number of the cell corresponding to 0 s
-#    starting_cell_calc = starting_cell + half_period_points*2 # row number of the cell corresponding to 0 s
-#    print("test, starting_cell:", starting_cell_calc)
 
     ### average temperature of each points within the cycle###
     sheet.cell(row = 1, column = 7).value = 't (s)'
@@ -185,7 +183,6 @@ def calculation():
             total = total + (sheet.cell(row = (starting_cell + half_period_points * 2) + row_number + b, column = 2).value) # summation 
             #1st cycle is rejected
             row_number = row_number + half_period_points * 2 # hop n to n+1, by using row_number
-        #print((b,",","total:",total))
         sheet.cell(row = starting_cell + b, column = 8).value = total/period_number[i] #averaged
 
     ### time of 1 cycle ###
@@ -271,21 +268,18 @@ if __name__ == "__main__":
     ################################################################################################################################################################################################################
     ### You have to adjust here ####################################################################################################################################################################################
     ################################################################################################################################################################################################################
-    path_peltier = "Put your path here" # input a path you want to save experimental results.
+    path_peltier = "Put your path here" # input a path you want to save experimental results. # C:\Users\kimilab2019_8\Desktop\filename.xlsx
     sample_name = 'Put your sample name here' # This is reflected to the file name
     # You can carry out 4 measurements in a row. (Actually, len(I), len(period_number) or len(half_period_time). You can change the length of the list if you want.)
     I = np.array([0.1,0.2,0.3,0.4]) # input the amplitude of current [mA], ±'This value' mA will be applied to your samples
-    period_number = [5000,5000,5000,5000] #How many cycles in measurements. 
+    period_number = [5000,5000,5000,5000] #How many cycles in measurements. Every time extra 1 cycle will be done (first cycle is probably not stable and the condition is different from other cycles)
     half_period_time = [4,4,4,4] # The timing of current flip [s]
     before_measurement_h = 8 # waiting time for thermal equilibrium, at least 3 [hour], (this is the empirical value, you don't have to obey)
     measurement_interval_h = 2 # interval waiting time between measurements [hour]   
     ################################################################################################################################################################################################################
     ################################################################################################################################################################################################################
 
-    measurements = int(input('number of measrurements: ')) # the number of the measurements
-
-    # ユーザ名メモ。Peltier, kimilb2019_8, fmato
-    # C:\Users\kimilab2019_8\Desktop\filename.xlsx
+    measurements = int(input('number of measrurements: ')) # the number of the measurements    
 
     time_calculation() # estimated time (actual measurement time is a bit longer)
     ec_confirmation()
@@ -299,7 +293,7 @@ if __name__ == "__main__":
     if confirmation == 1: # when condition is judged alright
         connection_test()
         print(datetime.now())
-        time.sleep(before_measurement_h*3600)
+        time.sleep(before_measurement_h * 3600)
         day = datetime.now().strftime("%Y_%m_%d")
         path = path_peltier + day
         if os.path.exists(path) == False:
@@ -314,10 +308,10 @@ if __name__ == "__main__":
             sheet = book.worksheets[0] 
             initial_settings() #turn on sourcemeters
             half_period_points = int(half_period_time[i]/pulse_interval) 
-            required_time = (period_number[i]+1) * half_period_time[i] *2 #calculate measurement time [s]
-            thermistor_steps = int(required_time/pulse_interval)+int(1/pulse_interval) 
+            required_time = (period_number[i] + 1) * half_period_time[i] * 2 #calculate measurement time [s]
+            thermistor_steps = int(required_time / pulse_interval)+int(1 / pulse_interval) 
 
-            sheet.cell(row = 7, column = 5).value = period_number[i]+1
+            sheet.cell(row = 7, column = 5).value = period_number[i] + 1
             sheet.cell(row = 8, column = 5).value = half_period_time[i]
 
             base_time = time.time()
@@ -326,11 +320,11 @@ if __name__ == "__main__":
             executor.submit(current_apply(I[i]))
             executor.shutdown()
             date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-            book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i]*1000, half_period_time[i], period_number[i])) #You can change saved file name here
+            book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i] * 1000, half_period_time[i], period_number[i])) #You can change saved file names here
             calculation()
             #chart_creation()
-            book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i]*1000, half_period_time[i], period_number[i]))
-            if i == measurements-1:
+            book.save("{0}/{2}_{3}mA_{4}s_{5}+1_{1}.xlsx".format(path, date, sample_name, I[i] * 1000, half_period_time[i], period_number[i])) #and here
+            if i -= measurements:
                 break
             time.sleep(measurement_interval_h * 3600)
         print('finished.')
