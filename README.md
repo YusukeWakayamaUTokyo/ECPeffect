@@ -49,7 +49,7 @@ Currently, the two functions in this program are in the state of comment out. On
 You can use them if you want.
 
 ### modules (python) needed in ECP_almost_pristine.py
-- openpyxl (for save the results) #not default module
+- openpyxl (for saving the results) #not default module
 - request (for notification via Slack (the function for this is disabled as the default)) #possibly not default module
 
 
@@ -68,5 +68,5 @@ The style of inputting 1 period of measurement is different from ECP_almost_pris
 The default measurement interval was elongated from 0.4 to 0.5 [s] to be devisible any integer second.
 
 ### modules (python) needed in ECP_csv.py
-- pandas (for save the results)
+- pandas (for saving the results)
 - sys (to get detailed information when errors happen during running this program)
