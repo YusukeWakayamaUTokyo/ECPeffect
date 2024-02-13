@@ -13,7 +13,7 @@ https://www.ni.com/en/support/downloads/drivers/download.ni-488-2.html#345631
 
 - Second one
 
-https://www.ni.com/ja/support/downloads/drivers/download.ni-visa.html#346210
+https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html#346210
 
 
 ## Using codes
