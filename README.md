@@ -18,7 +18,7 @@ https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html#346210
 
 ## Using codes
 
-You can copy & paste your preferd version of the program file (ECP.py and ECP_txt.py) to your jupyter note book.
+You can copy & paste your preferd version of the program files (ECP.py and ECP_txt.py) to your jupyter note book.
 
 Before using these codes, you should make sure some experimental conditions. First of all, you have to rewrite the code at the variable 'path_peltier' with your path to access the folder saving experimental results. If it is hard to find, you can use Crtl + f (Command + f; for Mac users) to identify the location of 'path_peltier'.
 
