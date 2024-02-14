@@ -53,6 +53,8 @@ You can use them if you want.
 
 ## ECP_txt.py (more interactive version)
 
+Once you input the path in the program file, you don't have to change the file anymore.
+
 Requiring less non-default modules in python. 
 
 Everytime you run this file, you have to input experimental conditoins not rewriting directly in this file but filling up entry fields popped up.
