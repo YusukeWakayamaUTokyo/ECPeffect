@@ -1,4 +1,4 @@
-These .py files are for the measurement of ElectroChemical Peltier (ECP) effect.
+These program files are for the measurement of ElectroChemical Peltier (ECP) effect.
 
 ## Preparation
 
