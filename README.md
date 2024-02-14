@@ -25,7 +25,7 @@ Before using these codes, you should make sure some experimental conditions. Fir
 You, of courese, can change GPIB of the sourcemeters. And if you use different types of thermistor, please change the parameters (B_constant, R25 and T25).
 
 ### modules (python) needed both program files 
-- concurrent.futures (enabling to run multiple functions parallely) #possibly not default module
+- concurrent.futures (enabling to run multiple functions parallely)
 - datetime (to get date)
 - math (for calculation (you can do with numpy, if you want))
 - numpy (for calculation)
@@ -48,7 +48,7 @@ You can use them if you want.
 
 ### modules (python) needed in ECP.py
 - openpyxl (for saving the results) #not default module
-- request (for notification via Slack (the function for this is disabled as the default)) #possibly not default module
+- requests (for notification via Slack (the function for this is disabled as the default)) #possibly not default module
 
 
 ## ECP_txt.py (more interactive version)
