@@ -68,3 +68,8 @@ The default measurement interval was elongated from 0.4 to 0.5 [s] to be devisib
 ### modules (python) needed in ECP_txt.py
 - pandas (for saving the results)
 - sys (to get detailed information when errors happen during running this program)
+
+## Authors
+Fumitoshi Matoba
+
+Yusuke Wakayama
