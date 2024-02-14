@@ -45,7 +45,7 @@ def initial_settings():
     keithley2.source_current = 0
     keithley2.enable_source()
     keithley2.measure_voltage()
-    keithley2.compliance_voltage = 1.3 # limit voltage near the potential window of the water
+    keithley2.compliance_voltage = 1.3 # limit voltage near the potential window of water
 
 # print the estimated time (h/m/s) for measurement before starting
 def time_calculation(before, interval, cycle, flip): # float, float, list, list
