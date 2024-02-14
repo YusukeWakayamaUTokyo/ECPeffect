@@ -75,7 +75,7 @@ The default measurement interval was elongated from 0.4 to 0.5 [s] to be devisib
 I checked the performance of the programs under following conditions.
 - Windows PC
 - python 3.9.7
-- jupyter ipykernel 6.4.1
+- jupyter (ipykernel) 6.4.1
 - openpyxl 3.0.9
 - requests 2.26.0
 - numpy 2.26.0
