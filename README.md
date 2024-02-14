@@ -51,7 +51,7 @@ You can use them if you want.
 - request (for notification via Slack (the function for this is disabled as the default)) #possibly not default module
 
 
-## ECP_txt.py (written to make it easier to use (hopefully))
+## ECP_txt.py (more interactive version)
 
 Requiring less non-default modules in python. 
 
